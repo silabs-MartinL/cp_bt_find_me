@@ -8,9 +8,9 @@ class Piezo():
 
     # Initialisation
     def __init__(self, pin, debug):
-        self.debug = debug
-        if self.debug: print(f'Piezo.init({pin}, {debug})')
+        print(f'Piezo.init({pin}, {debug})')
         # Initialise
+        self.debug = debug
         self.pin = pin
         self.pwmio = pwmio.PWMOut(pin, variable_frequency=True)
         atexit.register(self.deinit)

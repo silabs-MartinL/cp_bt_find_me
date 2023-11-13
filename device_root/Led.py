@@ -8,8 +8,8 @@ class Led():
     # Initialisation
     def __init__(self, pin, invert, debug):
         print(f'Led.init({pin}, {invert}, {debug})')
-        self.debug = debug
         # Initialise
+        self.debug = debug
         self.pin = pin
         self.dio = DigitalInOut(pin)
         self.dio.direction = Direction.OUTPUT

@@ -12,9 +12,9 @@ class Tick():
 
     # Initialisation
     def __init__(self, name, duration, repeat, debug):
-        self.debug = debug
-        if self.debug: print(f'Tick.init({name}, {duration}, {repeat}, {debug})')
+        print(f'Tick.init({name}, {duration}, {repeat}, {debug})')
         # Initialise
+        self.debug = debug
         self.name = name
         self.write(duration, repeat)
 
@@ -47,8 +47,6 @@ class Tick():
         self.start = supervisor.ticks_ms()
         if self.debug: print(f'Tick.write({self.name}, {self.duration}, {self.repeat})={self.on}')            
         return self.on
-
-
 
 # Tick class (END)
 

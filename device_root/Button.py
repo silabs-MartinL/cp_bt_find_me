@@ -7,9 +7,9 @@ class Button():
 
     # Initialisation
     def __init__(self, pin, invert, debug):
-        self.debug = debug
-        if self.debug: print(f'Button.init({pin}, {invert}, {debug})')
+        print(f'Button.init({pin}, {invert}, {debug})')
         # Initialise
+        self.debug = debug        
         self.pin = pin
         self.dio = DigitalInOut(pin)
         self.dio.direction = Direction.INPUT
