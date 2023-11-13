@@ -52,7 +52,7 @@ class App():
         self.ble["radio"] = BLERadio()
         self.ble["ias"] = ImmediateAlertService()
         self.ble["ad"] = ProvideServicesAdvertisement(self.ble["ias"])
-        self.ble["ad"].short_name = "Silabs Find Me"
+        self.ble["ad"].short_name = "Find Me"
         self.ble["ad"].connectable = True
 
     # Main function (called repeatedly do not block)
