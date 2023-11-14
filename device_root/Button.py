@@ -15,35 +15,25 @@ class Button():
         self.dio.direction = Direction.INPUT
         self.invert = invert
         self.on = False
-        self.state = 0b0
+        self.changed = False
+        self.pressed = False
+        self.released = False
 
-    # Main function, call to update state
-    # Returns: 
-    #   0 = off, unchanged
-    #   1 = on,  unchanged
-    #   2 = off, changed
-    #   3 = on,  changed
-    def main(self):
-        self.state = 0b0
+    # Read function, call to update state
+    def read(self):
+        self.changed = False
+        self.pressed = False
+        self.released = False
         on = self.dio.value
         if self.invert:
             on = not on
         if self.on != on:
-            self.state |= 0b10
-            if on:
-                self.state |= 0b1
             self.on = on
-        if self.debug and changed: print(f'Button.read({self.pin}) = {self.state}')
-        return self.state
-
-    # State function, returns last read button state, without a new read
-    # Returns: 
-    #   0 = off, unchanged
-    #   1 = on,  unchanged
-    #   2 = off, changed
-    #   3 = on,  changed
-    def state(self):
-        return self.state        
+            self.changed = True
+            self.pressed = self.on
+            self.released = not self.on
+        if self.debug and self.changed: print(f'Button.read({self.pin}) = {self.changed} [r={self.released}, p={self.pressed}, o={self.on}]')
+        return self.changed
 
 # Button class (END)
 

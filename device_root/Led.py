@@ -18,11 +18,6 @@ class Led():
         # Turn off
         self.write(False)
 
-    # Read function
-    def read(self):
-        if self.debug: print(f'Led.read({self.pin})={self.on}')
-        return self.on
-
     # Write function
     def write(self, on):
         self.on = on
