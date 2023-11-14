@@ -84,6 +84,23 @@ class App():
         # Running as target (not locator) ?
         if not self.ble["locate"]:
 
+            # Alert level is set ?
+            if self.ble["ias"].alert_level == 1 or self.ble["ias"].alert_level == 2:
+                # Has any button been released ?
+                if (btn_mild == 0b10) or (btn_high == 0b10):
+                    # Cancel alert
+                    self.ble["ias"].alert_level = 0
+            # Alert level is not set ?
+            else:
+                # High button released ?
+                if (btn_high == 0b10): 
+                    # Set mild alert
+                    self.ble["ias"].alert_level = 2
+                # Mild button released ?
+                elif (btn_mild == 0b10): 
+                    # Set mild alert
+                    self.ble["ias"].alert_level = 1
+
             # Not connected ?
             if not self.ble["radio"].connected:
                 # Not advertising ?
@@ -98,14 +115,7 @@ class App():
                     # Stop advertising
                     self.ble["radio"].stop_advertising()
                     if self.debug: print(f'stop_advertising()')
-       
-            # Alert level is set ?
-            if self.ble["ias"].alert_level != 0:
-                # Has any button been released ?
-                if (btn_mild == 0b10) or (btn_high == 0b10):
-                    # Cancel alert
-                    self.ble["ias"].alert_level = 0
-              
+    
             # Connected - double flash LED0
             if self.ble["radio"].connected: self.data["led_ble_mask"] = 0b101
             # Advertising - single flash LED0
