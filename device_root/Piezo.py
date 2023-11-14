@@ -17,11 +17,6 @@ class Piezo():
         self.on = False
         self.frequency = 0
 
-    # Read function
-    def read(self):
-        if self.debug: print(f'Piezo.read({self.pin})={self.frequency}, {self.duty_cycle}')
-        return self.on, self.frequency
-
     # Write function
     def write(self, on, frequency):
         self.on = on

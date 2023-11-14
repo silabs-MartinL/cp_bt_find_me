@@ -16,23 +16,12 @@ class Tick():
         # Initialise
         self.debug = debug
         self.name = name
+        self.on = False
+        self.duration = 0
+        self.repeat = False
+        self.fired = False
+        self.start = 0
         self.write(duration, repeat)
-
-    # Read function
-    def read(self):
-        fired = False
-        if self.on:
-            now = supervisor.ticks_ms()
-            diff = (now - self.start) & _TICKS_MAX
-            diff = ((diff + _TICKS_HALFPERIOD) & _TICKS_MAX) - _TICKS_HALFPERIOD
-            if diff >= self.duration:
-                fired = True
-                if self.repeat:
-                    self.write(self.duration, self.repeat)
-                else:
-                    self.write(0, False)
-        if self.debug and fired: print(f'Tick.read({self.name}) = {self.on}, {fired}')
-        return self.on, fired
 
     # Write function
     def write(self, duration, repeat):
@@ -45,8 +34,24 @@ class Tick():
         else:
             self.on = False
         self.start = supervisor.ticks_ms()
-        if self.debug: print(f'Tick.write({self.name}, {self.duration}, {self.repeat})={self.on}')            
+        if self.debug: print(f'Tick.write({self.name}, {self.duration}, {self.repeat}) = {self.on}')            
         return self.on
+
+    # Read function
+    def read(self):
+        self.fired = False
+        if self.on:
+            now = supervisor.ticks_ms()
+            diff = (now - self.start) & _TICKS_MAX
+            diff = ((diff + _TICKS_HALFPERIOD) & _TICKS_MAX) - _TICKS_HALFPERIOD
+            if diff >= self.duration:
+                self.fired = True
+                if self.repeat:
+                    self.write(self.duration, self.repeat)
+                else:
+                    self.write(0, False)
+        if self.debug and fired: print(f'Tick.read({self.name}) = {self.fired}')
+        return self.fired
 
 # Tick class (END)
 

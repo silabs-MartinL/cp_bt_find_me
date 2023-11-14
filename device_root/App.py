@@ -81,7 +81,10 @@ class App():
             # Read buttons
             self.hw["btn_high"].read()
             self.hw["btn_mild"].read()
-
+            # Read tick timers
+            self.ticks["leds"].read()
+            self.ticks["piezo"].read()
+ 
             # Running as target (not locator) ?
             if not self.ble["locate"]:
 
@@ -144,10 +147,8 @@ class App():
                     elif self.ble["alert_level"] == 1: print(f'Alert level mild')
                     else: print(f'Alert level none')
 
-            # Read piezo tick timer
-            tick_piezo_on, tick_piezo_fired = self.ticks["piezo"].read()
             # Piezo tick timer fired ?
-            if tick_piezo_fired:
+            if self.ticks["piezo"].fired:
                 # High alert level ?
                 if self.ble["ias"].alert_level > 1:
                     # Validate index
@@ -177,10 +178,8 @@ class App():
                         # Stop playing note
                         self.hw["piezo"].write(False, self.data["piezo_scale"][0])
 
-            # Read leds tick timer
-            tick_leds_on, tick_leds_fired = self.ticks["leds"].read()
             # Led tick timer fired ?
-            if tick_leds_fired:
+            if self.ticks["leds"].fired:
                 # Safety check leds bit
                 if self.data["leds_bit"] & self.data["leds_mask"] == 0b0:
                     self.data["leds_bit"] = 0b1 
