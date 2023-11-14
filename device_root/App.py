@@ -10,6 +10,7 @@ from adafruit_ble.advertising.standard import ProvideServicesAdvertisement
 from Button import Button
 from Led import Led
 from Piezo import Piezo
+from Rtttl import Rtttl
 from Tick import Tick
 from ImmediateAlertService import ImmediateAlertService
 
@@ -31,6 +32,7 @@ class App():
             self.hw["led_ble"]   = Led(board.PA4, False, False) # LED0
             self.hw["led_alert"] = Led(board.PA7, False, False) # LED1 
             self.hw["piezo"]     = Piezo(board.PA0, False) # MIKROE_PWM 
+            self.hw["rtttl"]     = Rtttl(self.hw["piezo"], False) 
         elif board.board_id == "devkit_xg24_brd2601b":
             self.on              = True
             self.hw["btn_high"]  = Button(board.PB3, True, False) # BTN1
@@ -77,7 +79,7 @@ class App():
         #if self.debug: print(f'App.main() ENTER t={time.monotonic()} m={self.data["main"]}')
         # App is on ? 
         if self.on:
-
+            self.hw["rtttl"].main()
             # Read buttons
             self.hw["btn_high"].read()
             self.hw["btn_mild"].read()
