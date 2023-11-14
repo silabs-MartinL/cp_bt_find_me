@@ -22,15 +22,30 @@ class App():
         if self.debug: print(f'App.init()')
         # Hardware (board IDs: explorerkit_xg24_brd2703a, devkit_xg24_brd2601b, sparkfun_thingplus_matter_mgm240p_brd2704a)
         self.hw = {}
+        self.hw["init"] = False
         if board.board_id == "explorerkit_xg24_brd2703a":
-            self.hw["init"]  = True
-            self.hw["btn0"]  = Button(board.PB2, True, False)
-            self.hw["btn1"]  = Button(board.PB3, True, False)
-            self.hw["led0"]  = Led(board.PA4, False, False)
-            self.hw["led1"]  = Led(board.PA7, False, False)  
-            self.hw["piezo"] = Piezo(board.PA0, False) # MIKROE_PWM  
-        else:
+            self.hw["init"]      = True
+            self.hw["btn_mild"]  = Button(board.PB2, True, False) # BTN0
+            self.hw["btn_high"]  = Button(board.PB3, True, False) # BTN1
+            self.hw["led_ble"]   = Led(board.PA4, False, False) # LED0
+            self.hw["led_alert"] = Led(board.PA7, False, False) # LED1 
+            self.hw["piezo"]     = Piezo(board.PA0, False) # MIKROE_PWM 
+        elif board.board_id == "devkit_xg24_brd2601b":
+            self.hw["init"]      = True
+            self.hw["btn_mild"]  = Button(board.PB2, True, False) # BTN0
+            self.hw["btn_high"]  = Button(board.PB3, True, False) # BTN1
+            self.hw["led_ble"]   = Led(board.PB0, False, False) # BLUE
+            self.hw["led_alert"] = Led(board.PD2, False, False) # RED (PA4=GREEN)  
+            self.hw["piezo"]     = Piezo(board.PA7, False) # SPI_CS (header 10 - may clash with IMU) 
             self.hw["init"] = False
+        elif board.board_id == "sparkfun_thingplus_matter_mgm240p_brd2704a":
+            self.hw["init"]      = True
+            self.hw["btn_mild"]  = Button(board.PA4, True, False) # (external)
+            self.hw["btn_high"]  = Button(board.PB2, True, False) # (external)
+            self.hw["led_ble"]   = Led(board.PA8, False, False) # BLUE (on board)
+            self.hw["led_alert"] = Led(board.PB0, False, False) # (external)   
+            self.hw["piezo"]     = Piezo(board.PB1, False)
+        else:
             print(f'App.init() ERROR: Unsupported board: {board.board_id}')
         # Tick timers
         self.ticks = {}
@@ -40,8 +55,8 @@ class App():
         self.data = {}
         self.data["leds_bit"] = 0b1
         self.data["leds_mask"] = 0b1111111111
-        self.data["led0_mask"] = 0b0
-        self.data["led1_mask"] = 0b0
+        self.data["led_ble_mask"] = 0b0
+        self.data["led_alert_mask"] = 0b0
         self.data["piezo_scale"] = [261, 294, 330, 349, 392, 440, 494, 523]
         self.data["piezo_index"] = None
         # Bluetooth
@@ -63,8 +78,8 @@ class App():
         btn0_on = btn0_change = False
         btn1_on = btn1_change = False
         # Read buttons
-        if "btn0" in self.hw: btn0_on, btn0_change = self.hw["btn0"].read()
-        if "btn1" in self.hw: btn1_on, btn1_change = self.hw["btn1"].read()
+        if "btn_mild" in self.hw: btn0_on, btn0_change = self.hw["btn_mild"].read()
+        if "btn_high" in self.hw: btn1_on, btn1_change = self.hw["btn_high"].read()
 
         # Running as target (not locator) ?
         if not self.ble["locate"]:
@@ -92,17 +107,17 @@ class App():
                     self.ble["ias"].alert_level = 0
               
             # Connected - double flash LED0
-            if self.ble["radio"].connected: self.data["led0_mask"] = 0b101
+            if self.ble["radio"].connected: self.data["led_ble_mask"] = 0b101
             # Advertising - single flash LED0
-            elif self.ble["radio"].advertising: self.data["led0_mask"] = 0b1
+            elif self.ble["radio"].advertising: self.data["led_ble_mask"] = 0b1
             # Else - turn off LED0
-            else: self.data["led0_mask"] = 0b0
+            else: self.data["led_ble_mask"] = 0b0
             # High alert - double flash LED1
-            if self.ble["ias"].alert_level > 1: self.data["led1_mask"] = 0b101
+            if self.ble["ias"].alert_level > 1: self.data["led_alert_mask"] = 0b101
             # Mid alert - single flash LED1
-            elif self.ble["ias"].alert_level == 1: self.data["led1_mask"] = 0b1
+            elif self.ble["ias"].alert_level == 1: self.data["led_alert_mask"] = 0b1
             # Else - turn off LED1
-            else: self.data["led1_mask"] = 0b0  
+            else: self.data["led_alert_mask"] = 0b0  
     
         # Connected changed ?
         if self.ble["connected"] != self.ble["radio"].connected:
@@ -159,19 +174,19 @@ class App():
             if self.data["leds_bit"] & self.data["leds_mask"] == 0b0:
                 self.data["leds_bit"] = 0b1 
             # LED0 initialised ?
-            if "led0" in self.hw:
+            if "led_ble" in self.hw:
                 # Update led0
-                if self.data["leds_bit"] & self.data["led0_mask"]:
-                    self.hw["led0"].write(True)
+                if self.data["leds_bit"] & self.data["led_ble_mask"]:
+                    self.hw["led_ble"].write(True)
                 else:
-                    self.hw["led0"].write(False)
+                    self.hw["led_ble"].write(False)
             # LED1 initialised ?
-            if "led1" in self.hw:
+            if "led_alert" in self.hw:
                 # Update led0
-                if self.data["leds_bit"] & self.data["led1_mask"]:
-                    self.hw["led1"].write(True)
+                if self.data["leds_bit"] & self.data["led_alert_mask"]:
+                    self.hw["led_alert"].write(True)
                 else:
-                    self.hw["led1"].write(False)                    
+                    self.hw["led_alert"].write(False)                    
             # Update leds bit
             self.data["leds_bit"] <<= 1
 
