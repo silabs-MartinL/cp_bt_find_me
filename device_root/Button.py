@@ -16,17 +16,23 @@ class Button():
         self.invert = invert
         self.on = False
 
-    # Read function
-    def read(self):
-        changed = False
+    # Main function, call to update on value, returns:
+    # 0 = off, unchanged
+    # 1 = on,  unchanged
+    # 2 = off, changed
+    # 3 = on,  changed
+    def main(self):
+        result = 0b0
         on = self.dio.value
         if self.invert:
             on = not on
         if self.on != on:
-            changed = True
+            result |= 0b10
+            if on:
+                result |= 0b1
             self.on = on
-        if self.debug and changed: print(f'Button.read({self.pin}) = {self.on}, {changed}')
-        return self.on, changed
+        if self.debug and changed: print(f'Button.read({self.pin}) = {result}')
+        return result
 
 # Button class (END)
 

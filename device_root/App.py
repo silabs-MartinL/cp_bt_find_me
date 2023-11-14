@@ -75,11 +75,11 @@ class App():
         #if self.debug: print(f'App.main() ENTER t={time.monotonic()} m={self.data["main"]}')
 
         # Buttons off and unchanged
-        btn0_on = btn0_change = False
-        btn1_on = btn1_change = False
+        btn_mild = 0b0
+        btn_high = 0b0
         # Read buttons
-        if "btn_mild" in self.hw: btn0_on, btn0_change = self.hw["btn_mild"].read()
-        if "btn_high" in self.hw: btn1_on, btn1_change = self.hw["btn_high"].read()
+        if "btn_mild" in self.hw: btn_mild = self.hw["btn_mild"].main()
+        if "btn_high" in self.hw: btn_high = self.hw["btn_high"].main()
 
         # Running as target (not locator) ?
         if not self.ble["locate"]:
@@ -101,8 +101,8 @@ class App():
        
             # Alert level is set ?
             if self.ble["ias"].alert_level != 0:
-                # Has any button been pressed ?
-                if (btn0_change and btn0_on) or (btn1_change and btn1_on):
+                # Has any button been released ?
+                if (btn_mild == 0b10) or (btn_high == 0b10):
                     # Cancel alert
                     self.ble["ias"].alert_level = 0
               
