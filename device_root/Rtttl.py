@@ -68,8 +68,11 @@ class Rtttl():
                     played = True
             # Didn't play anything ?
             if not played:
-                # Shut up
-                self.piezo.write(0)
+                # Piezo is on?
+                if self.piezo.on:
+                    # Shut up
+                    self.piezo.write(0)
+                # Restart timer
                 self.tick.write(333, False)
       
     # Play tune function
