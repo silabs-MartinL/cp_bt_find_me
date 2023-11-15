@@ -63,8 +63,10 @@ class App():
             self.data["tune_name_mild"] = self.hw["rtttl"].load("knightrl:d=4,o=5,b=125:16e,16p,16f,16e,16e,16p,16e,16e,16f,16e,16e,16e,16d#,16e,16e,16e,16e,16p,16f,16e,16e,16p,16f,16e,16f,16e,16e,16e,16d#,16e,16e,16e,16d,16p,16e,16d,16d,16p,16e,16d,16e,16d,16d,16d,16c,16d,16d,16d,16d,16p,16e,16d,16d,16p,16e,16d,16e,16d,16d,16d,16c,16d,16d,16d", False)
             # Bluetooth
             self.ble = {}
-            self.ble["locate"] = False
+            self.ble["locate_state"] = 0
+            self.ble["locate_level"] = 0
             self.ble["connected"] = False
+            self.ble["connection"] = None
             self.ble["alert_level"] = 0
             self.ble["radio"] = BLERadio()
             self.ble["ias"] = ImmediateAlertService()
@@ -84,53 +86,104 @@ class App():
             self.ticks["leds"].read()
  
             # Running as target (not locator) ?
-            if not self.ble["locate"]:
+            if self.ble["locate_state"] == 0:
 
-                # Alert level is set ?
-                if self.ble["ias"].alert_level == 1 or self.ble["ias"].alert_level == 2:
-                    # Has any button been released ?
-                    if self.hw["btn_high"].released or self.hw["btn_mild"].released:
+                # Has any button been released ?
+                if self.hw["btn_high"].released or self.hw["btn_mild"].released:
+                    # Alert level is set ?
+                    if self.ble["ias"].alert_level == 1 or self.ble["ias"].alert_level == 2:
                         # Cancel alert
                         self.ble["ias"].alert_level = 0
-                # Alert level is not set ?
-                else:
-                    # High button released ?
-                    if self.hw["btn_high"].released: 
-                        # Set high alert
-                        self.ble["ias"].alert_level = 2
-                    # Mild button released ?
-                    elif self.hw["btn_mild"].released: 
-                        # Set mild alert
-                        self.ble["ias"].alert_level = 1
+                    # Alert level is not set ?
+                    else:
+                        # Not connected ?
+                        if not self.ble["radio"].connected:
+                            # Run as locator
+                            self.ble["locate_state"] = 1
+                            print(f'Locator')
+                            # High button released ?
+                            if self.hw["btn_high"].released: 
+                                # Set high alert
+                                self.ble["locate_level"] = 2
+                            # Mild button released ?
+                            elif self.hw["btn_mild"].released: 
+                                # Set mild alert
+                                self.ble["locate_level"] = 1
+                            # Advertising ?
+                            if self.ble["radio"].advertising:
+                                # Stop advertising
+                                self.ble["radio"].stop_advertising()
+                                if self.debug: print(f'stop_advertising()')                                
 
-                # Not connected ?
-                if not self.ble["radio"].connected:
-                    # Not advertising ?
-                    if not self.ble["radio"].advertising:
-                        # Begin advertising
-                        self.ble["radio"].start_advertising(self.ble["ad"])
-                        if self.debug: print(f'start_advertising()')
-                # Connected ?
-                else:
-                    # Advertising ?
-                    if self.ble["radio"].advertising:
-                        # Stop advertising
-                        self.ble["radio"].stop_advertising()
-                        if self.debug: print(f'stop_advertising()')
+                # Still running as target (not locator) ?
+                if self.ble["locate_state"] == 0:
+                    # Not connected ?
+                    if not self.ble["radio"].connected:
+                        # Not advertising ?
+                        if not self.ble["radio"].advertising:
+                            # Begin advertising
+                            self.ble["radio"].start_advertising(self.ble["ad"])
+                            if self.debug: print(f'start_advertising()')
+                    # Connected ?
+                    else:
+                        # Advertising ?
+                        if self.ble["radio"].advertising:
+                            # Stop advertising
+                            self.ble["radio"].stop_advertising()
+                            if self.debug: print(f'stop_advertising()')
         
-                # Connected - double flash LED0
-                if self.ble["radio"].connected: self.data["led_ble_mask"] = 0b101
-                # Advertising - single flash LED0
-                elif self.ble["radio"].advertising: self.data["led_ble_mask"] = 0b1
-                # Else - turn off LED0
-                else: self.data["led_ble_mask"] = 0b0
-                # High alert - double flash LED1
-                if self.ble["ias"].alert_level > 1: self.data["led_alert_mask"] = 0b101
-                # Mid alert - single flash LED1
-                elif self.ble["ias"].alert_level == 1: self.data["led_alert_mask"] = 0b1
-                # Else - turn off LED1
-                else: self.data["led_alert_mask"] = 0b0  
-        
+                    # Connected - double flash LED0
+                    if self.ble["radio"].connected: self.data["led_ble_mask"] = 0b101
+                    # Advertising - single flash LED0
+                    elif self.ble["radio"].advertising: self.data["led_ble_mask"] = 0b1
+                    # Else - turn off LED0
+                    else: self.data["led_ble_mask"] = 0b0
+
+                    # High alert - double flash LED1
+                    if self.ble["ias"].alert_level > 1: self.data["led_alert_mask"] = 0b101
+                    # Mid alert - single flash LED1
+                    elif self.ble["ias"].alert_level == 1: self.data["led_alert_mask"] = 0b1
+                    # Else - turn off LED1
+                    else: self.data["led_alert_mask"] = 0b0    
+
+            # Running as locator (not target) ?    
+            else:
+                # Has any button been released ?
+                if self.hw["btn_high"].released or self.hw["btn_mild"].released:
+                    # Run as target CANCEL ALARMS, DISCONNECT
+                    self.ble["locate_state"] = 0
+                    print(f'Target')
+                    pass
+
+                # Still running as locator ? 
+                if self.ble["locate_state"] != 0:
+                    # Update alert led
+                    if self.ble["locate_level"] == 2:
+                        # Double deflash on LED1
+                        self.data["led_alert_mask"] = 0b1111111010
+                    elif self.ble["locate_level"] == 1:
+                        # Single deflash on LED1
+                        self.data["led_alert_mask"] = 0b1111111110  
+                    else:
+                        # LED 1 is on
+                        self.data["led_alert_mask"] = 0b1111111111
+
+                    # Scanning ? 
+                    if self.ble["locate_state"] == 1:
+                        # Start scan, loop through ads
+                        if self.debug: print(f'start_scan()')
+                        target_ads = {}
+                        for ad in self.ble["radio"].start_scan(ProvideServicesAdvertisement, timeout=0.1):
+                            # Immediate alert service in advertisement ?
+                            if self.ble["ias"] in ad.services:
+                                # Save ad
+                                target_ads[ad.address] = {}
+                                target_ads[ad.address]["short_name"] = ad.short_name
+                        if self.debug: print(f'{target_ads}')
+                        # Single deflash
+                        self.data["led_ble_mask"] = 0b1111111110                    
+
+            # Common code
             # Connected changed ?
             if self.ble["connected"] != self.ble["radio"].connected:
                 self.ble["connected"] = self.ble["radio"].connected
