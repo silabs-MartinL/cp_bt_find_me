@@ -18,18 +18,21 @@ class Piezo():
         self.frequency = 0
 
     # Write function
-    def write(self, on, frequency):
-        self.on = on
-        self.frequency = frequency
-        if self.frequency <   16: self.frequency =   16 # C0
-        if self.frequency > 7902: self.frequency = 7902 # B8
+    def write(self, frequency):
+        # Valid frequency C0 to B8 ?
+        if frequency >= 16 and frequency <= 7902: 
+            self.on = True
+            self.frequency = frequency
+        else:
+            self.on = False
+            self.frequency = 0
         if self.on: 
             self.pwmio.frequency = self.frequency
             self.pwmio.duty_cycle = 0x8000
         else:
             self.pwmio.duty_cycle = 0
-            self.pwmio.frequency = self.frequency
-        if self.debug: print(f'Piezo.write({self.pin}, {self.on}, {self.frequency})')
+            self.pwmio.frequency = 262
+        if self.debug: print(f'Piezo.write({self.pin}, {self.frequency})')
 
     # Deinit function
     def deinit(self):
