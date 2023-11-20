@@ -36,8 +36,8 @@ class App():
             self.on              = True
             self.hw["btn_high"]  = Button(board.PB3, True, False) # BTN1
             self.hw["btn_mild"]  = Button(board.PB2, True, False) # BTN0
-            self.hw["led_ble"]   = Led(board.PB0, False, False) # BLUE
-            self.hw["led_alert"] = Led(board.PD2, False, False) # RED (PA4=GREEN)  
+            self.hw["led_ble"]   = Led(board.PB0, True, False) # BLUE
+            self.hw["led_alert"] = Led(board.PD2, True, False) # RED (PA4=GREEN)  
             self.hw["rtttl"]     = Rtttl(board.PA7, True) # SPI_CS (header 10 - may clash with IMU) 
         elif board.board_id == "sparkfun_thingplus_matter_mgm240p_brd2704a":
             self.on              = True
@@ -45,7 +45,7 @@ class App():
             self.hw["btn_mild"]  = Button(board.PA4, True, False) # (external)
             self.hw["led_ble"]   = Led(board.PA8, False, False) # BLUE (on board)
             self.hw["led_alert"] = Led(board.PB0, False, False) # (external)   
-            self.hw["rtttl"]     = Rtttl(board.PB1, True)
+            self.hw["rtttl"]     = Rtttl(board.PC7, True)
         else:
             print(f'App.init() ERROR: Unsupported board: {board.board_id}')
         # App is on ?
@@ -69,10 +69,13 @@ class App():
             self.ble["connection"] = None
             self.ble["alert_level"] = 0
             self.ble["radio"] = BLERadio()
+            #self.ble["radio"].name = f'FindMe {self.ble["radio"].address_bytes[4]:02x}{self.ble["radio"].address_bytes[5]:02x}'
+            #if debug: print(f'name={self.ble["radio"].name}')
             self.ble["ias"] = ImmediateAlertService()
-            self.ble["ad"] = ProvideServicesAdvertisement(self.ble["ias"])
-            self.ble["ad"].short_name = "Find Me"
-            self.ble["ad"].connectable = True
+            self.ble["tx_ad"] = ProvideServicesAdvertisement(self.ble["ias"])
+            self.ble["tx_ad"].short_name = f'{self.ble["radio"].address_bytes[1]:02X}{self.ble["radio"].address_bytes[0]:02X} Find Me'
+            if debug: print(f'short_name={self.ble["tx_ad"].short_name}')
+            self.ble["tx_ad"].connectable = True
 
     # Main function (called repeatedly do not block)
     def main(self):
@@ -122,7 +125,7 @@ class App():
                         # Not advertising ?
                         if not self.ble["radio"].advertising:
                             # Begin advertising
-                            self.ble["radio"].start_advertising(self.ble["ad"])
+                            self.ble["radio"].start_advertising(self.ble["tx_ad"])
                             if self.debug: print(f'start_advertising()')
                     # Connected ?
                     else:
@@ -168,21 +171,50 @@ class App():
                         # LED 1 is on
                         self.data["led_alert_mask"] = 0b1111111111
 
-                    # Scanning ? 
-                    if self.ble["locate_state"] == 1:
-                        # Start scan, loop through ads
-                        if self.debug: print(f'start_scan()')
-                        target_ads = {}
-                        for ad in self.ble["radio"].start_scan(ProvideServicesAdvertisement, timeout=0.1):
-                            # Immediate alert service in advertisement ?
-                            if self.ble["ias"] in ad.services:
-                                # Save ad
-                                target_ads[ad.address] = {}
-                                target_ads[ad.address]["short_name"] = ad.short_name
-                        if self.debug: print(f'{target_ads}')
-                        # Single deflash
-                        self.data["led_ble_mask"] = 0b1111111110                    
-
+                    # Start scan
+                    addresses = []
+                    short_names = []
+                    print(f'start_scan()')
+                    for ad in self.ble["radio"].start_scan(ProvideServicesAdvertisement, timeout=0.1):
+                        # Immediate alert service in advertisement ?
+                        if self.ble["ias"] in ad.services:
+                            # Has a short name ?
+                            if ad.short_name != None:
+                                # Shortname contains Find Me ?
+                                if ad.short_name.find("Find Me") > -1:
+                                    # Not got this device yet ?
+                                    if not ad.address in addresses:
+                                        print(f'ad: address={ad.address}, short_name="{ad.short_name}"')
+                                        # Save address and short name
+                                        addresses.append(ad.address)
+                                        short_names.append(ad.short_name)
+                    # Stop scan
+                    print(f'stop_scan()')
+                    self.ble["radio"].stop_scan()
+                    # Got some results ?
+                    if len(addresses) > 0:
+                        # Loop through results
+                        for i in range(len(addresses)):
+                            # Attempt to connect to device
+                            connection = self.ble["radio"].connect(addresses[i], timeout=0.1)
+                            print(f'connect({addresses[i]}, "{short_names[i]}")={connection.connected}')
+                            # Attempt to get service
+                            try:
+                                service = connection[ImmediateAlertService]
+                            except:
+                                print(f'Could not find Immediate Alert Service')
+                            else:
+                                print(f'Found Immediate Alert Service')
+                                try: 
+                                    service.alert_level = self.ble["locate_level"]
+                                except:
+                                    print(f'Could not write Alert Level')
+                                else:
+                                    print(f'Wrote Alert Level = {self.ble["locate_level"]}')
+                            # Disconnect from device
+                            connection.disconnect()
+                            print(f'disconnect({addresses[i]}, "{short_names[i]}")')
+            
             # Common code
             # Connected changed ?
             if self.ble["connected"] != self.ble["radio"].connected:

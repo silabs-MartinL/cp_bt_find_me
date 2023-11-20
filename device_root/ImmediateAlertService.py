@@ -10,7 +10,7 @@ class ImmediateAlertService(Service):
 
     alert_level = Uint8Characteristic(
         uuid = StandardUUID(0x2A06),
-        properties = (Characteristic.READ | Characteristic.WRITE | Characteristic.WRITE_NO_RESPONSE)
+        properties = (Characteristic.READ | Characteristic.WRITE_NO_RESPONSE)
     )
 
     def __init__(self, service=None):
