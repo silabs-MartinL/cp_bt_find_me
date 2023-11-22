@@ -11,7 +11,7 @@ The final device has the following features:
 
 - Implements a Bluetooth device that conforms to the Bluetooth SIG Find Me profile
 - Acts as a target device where an alert can be triggered remotely, including from a mobile phone
-- Acts as a locator device where an alert can be triggered in a remote target device
+- Acts as a locator device where an alert can be triggered in remote target devices
 - Audio alerts play RTTTL phone ringtones on a passive piezo buzzer using PWM output
 - LEDs indicate the status of the device, including the alert state
 - Buttons are used to control the operation of the device
@@ -32,36 +32,50 @@ The LEDs and button assignments on each board are shown in the table below (see 
 
 | Indication                                              | Meaning                                                      |
 | ------------------------------------------------------- | ------------------------------------------------------------ |
-| High and Mild flash on briefly together once per second | Device is advertising as a target, awaiting a connection     |
+| High and Mild flash on briefly together once per second | Device is advertising as a target                            |
 | High flashing rapidly                                   | Device is set to high alert level as a target, the piezo will play a tune in this state |
 | Mild flashing rapidly                                   | Device is set to mild alert level as a target, the piezo will play a tune in this state |
 | High on with a brief off period once per second         | Device is acting as a locator and will connect to any found targets to set them to high alert level |
 | Mild on with a brief off period once per second         | Device is acting as a locator and will connect to any found targets to set them to mild alert level |
+| High and Mild both on                                   | Device is cancelling its operation as a locator and attempting to cancel alerts on target devices |
 
 ### Button Controls
 
 Button functions are activated when the button is released.
 
-A device in locator mode will continually scan for and set the alerts levels on any device in target mode. To fully cancel alerts it is necessary to first return the locator device to target mode, then cancel the alert locally on any sounding target device. 
+In the final implementation a device in locator mode will continually scan for new target devices to activate.
 
-This logic allows any target device in range to sound an alert on any device it come into range of even when moving around, thus maximising the chances of finding a lost device. It would be possible to alter the logic to reopen connections to any device it has alerted and cancel those alerts before returning to target mode, however for reliable operation the target devices will need to still be in range of the locator.
+The locator will attempt to place newly discovered targets into an alert state three times at 1s intervals, this provides retries for alerting devices but also allows alerts to be cancelled on the target devices without them being reactivated. The Bluetooth connection is closed after writing and is not maintained.
+
+When exiting locator mode three attempts are made at 1s intervals to cancel the alert on each activated target device. If the locator has moved out of range of an activated target the alert will need to be cancelled on the target device. The Bluetooth connection is closed after writing and is not maintained.
 
 | State                                            | Button Controls                                              |
 | ------------------------------------------------ | ------------------------------------------------------------ |
-| Device is in target mode, alert level is set     | Any: Cancels alert on local device (will be turned back on if a device is running in locator mode nearby) |
-| Device is in target mode, alert level is not set | High: swaps to locator mode setting high alert on any found targets |
-|                                                  | Mild: swaps to locator mode setting mild alert on any found targets |
-| Device is in locator mode                        | Any: Cancels locator mode and returns to target mode         |
+| Device is in target mode, alert level is set     | Any: Cancels alert on local device (will be turned back on if a nearby locator is still writing to that device) |
+| Device is in target mode, alert level is not set | High: swaps to locator mode setting high alert on any found targets <br />Mild: swaps to locator mode setting mild alert on any found targets |
+| Device is in locator mode                        | Any: Cancels locator mode, clears alerts in target devices and returns to target mode |
 
+### EFR Connect
 
+The EFR Connect mobile application, available for iOS and Android, can also be used to trigger alerts as follows:
 
-## Files and Folders
+1. Initiate a scan for devices
+2. Connect to any device named "*xxxx* Find Me" (where *xxxx* is a unique id for each device)
+3. In the Immediate Alert service click More Info
+4. Click Write below the Alert Level characteristic
+5. Select and alert level from the dropdown, then click the Send button
 
-**device_root_target:** Contains the software for step 1 which acts as a target device only. 
+## Software
 
-**device_root_target_locator:** Contains the software for step 2 which adds the ability to act as a locator device in addition to a target device. 
+This code was developed using CircuitPython 8.2.8 (2023-11-16) and uses libraries from the 8.x 2023-11-21 library bundle. To program your device copy the files and folders, from one of the folders above, into the root of your CircuitPython device.
 
-To program your device copy the files and folders, from one of the folders above, into the root of your CircuitPython device.
+**device_root_1_hardware:** Contains the software for step 1 which allows the operation of the device hardware to be tested. 
+
+**device_root_2_target:** Contains the software for step 2 which acts as a Bluetooth Find Me target device only. 
+
+**device_root_3_simple_locator:** Contains the software for step 3 which adds the ability to act as a locator device in addition to a target device. The simple locator continuously places any devices it finds into an alert state, alerts that are cancelled on a target device will be reactivated if the locator remains in range. Returning from locator to target mode does not remotely cancel any activated targets. To cancel alerts with this software first requires returning the locator to target mode, then cancelling alerts locally on the target devices.
+
+**device_root_4_advanced_locator:** Contains the software for step 4 which limits the number of alert writes to each discovered target (to avoid reactivation) and attempts to cancel alerts raised on any target devices when returning to target mode.
 
 ## Hardware
 

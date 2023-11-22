@@ -50,20 +50,18 @@ from ImmediateAlertService import ImmediateAlertService
 ALERT_LEVEL_NONE   =    0
 ALERT_LEVEL_MILD   =    1
 ALERT_LEVEL_HIGH   =    2
-ALERT_LEVEL_CANCEL =    3
 
 TICK_MS_LEDS       =  100 # Interval for LED timer
 TICK_MS_LOCATE     = 1000 # Interval for locate mode timer
 
-LOCATE_COUNT_MAX   =    3 # Number of attempts to set or clear alert level in target devices
-
-# Application class (Find Me)
+# Application class - Find Me - Target and simple locator
 class App():
 
     # Initialisation
     def __init__(self, debug):
         # Note debug setting
         self.debug = True
+        if self.debug: print(f'Find Me - target and simple locator')
         # Not initialised
         self.on = False
         # Hardware
@@ -118,8 +116,6 @@ class App():
             self.ble["tx_ad"].short_name = f'{self.ble["radio"].address_bytes[1]:02X}{self.ble["radio"].address_bytes[0]:02X} Find Me'
             self.ble["tx_ad"].connectable = True
             self.ble["locate_level"] = ALERT_LEVEL_NONE
-            self.ble["locate_counts"] = {}
-            self.ble["locate_cancel"] = 0
             if self.debug: print(f'INFO: BLE short_name="{self.ble["tx_ad"].short_name}"')            
 
     # Main function (called repeatedly do not block)
@@ -145,26 +141,18 @@ class App():
                         if self.debug: print(f'INFO: Locate mode high')
                         # Go to locate level high
                         self.ble["locate_level"] = ALERT_LEVEL_HIGH
-                        # Clear locate counts
-                        self.ble["locate_counts"] = {} 
-                        # Clear cancel attempt count
-                        self.ble["locate_cancel"] = 0                                               
                     # Mild button released ?
                     elif self.hw["btn_mild"].released:
                         if self.debug: print(f'INFO: Locate mode mild')
                         # Go to locate level mild
                         self.ble["locate_level"] = ALERT_LEVEL_MILD 
-                        # Clear locate counts
-                        self.ble["locate_counts"] = {}
-                        # Clear cancel attempt count
-                        self.ble["locate_cancel"] = 0
                 # Running as locator ? 
                 else:
-                    if self.debug: print(f'INFO: Locate mode cancelling')
-                    # Go to locate level cancel
-                    self.ble["locate_level"] = ALERT_LEVEL_CANCEL
-                    # Make three attempts to cancel on each target we activated
-                    self.ble["locate_cancel"] = LOCATE_COUNT_MAX
+                    if self.debug: print(f'INFO: Target mode')
+                    # Go to locate level none
+                    self.ble["locate_level"] = ALERT_LEVEL_NONE 
+                    # Stop locate timer
+                    self.ticks["locate"].write(0, False)
 
             # Read tick timers
             self.ticks["leds"].read()
@@ -286,6 +274,7 @@ class App():
                         self.hw["led_mild"].write(False)
 
                         # Start scan
+                        addresses = []
                         for ad in self.ble["radio"].start_scan(ProvideServicesAdvertisement, timeout=0.1):
                             # Immediate alert service in advertisement ?
                             if self.ble["ias"] in ad.services:
@@ -294,10 +283,10 @@ class App():
                                     # Shortname contains Find Me ?
                                     if ad.short_name.find("Find Me") > -1:
                                         # Not got this device yet ?
-                                        if not ad.address in self.ble["locate_counts"]:
+                                        if not ad.address in addresses:
                                             if self.debug: print(f'INFO: Locate mode found target address={ad.address}, short_name="{ad.short_name}"')
-                                            # Initialise locate count for this address
-                                            self.ble["locate_counts"][ad.address] = 0
+                                            # Add to list of addresses
+                                            addresses.append(ad.address)
                         # Stop scan
                         self.ble["radio"].stop_scan()
 
@@ -311,93 +300,35 @@ class App():
                             self.hw["led_mild"].write(True)
 
                         # Loop through devices to be located
-                        for address in self.ble["locate_counts"].keys():
-                            # Need to transmit write to this device
-                            if self.ble["locate_counts"][address] < LOCATE_COUNT_MAX:
-                                # Attempt to connect to device
-                                connection = self.ble["radio"].connect(address, timeout=0.1)
-                                if self.debug: print(f'INFO: Locate mode connect address={address}, connected={connection.connected}')
-                                # Attempt to get service
-                                try:
-                                    service = connection[ImmediateAlertService]
+                        for address in addresses:
+                            # Attempt to connect to device
+                            connection = self.ble["radio"].connect(address, timeout=0.1)
+                            if self.debug: print(f'INFO: Locate mode connect address={address}, connected={connection.connected}')
+                            # Attempt to get service
+                            try:
+                                service = connection[ImmediateAlertService]
+                            except:
+                                if self.debug: print(f'WARNING: Locate mode could not find Immediate Alert Service address={address}')
+                            else:
+                                # Attempt to write alert level
+                                try: 
+                                    service.alert_level = self.ble["locate_level"]
                                 except:
-                                    if self.debug: print(f'WARNING: Locate mode could not find Immediate Alert Service address={address}')
+                                    if self.debug: print(f'WARNING: Locate mode could not write Alert Level address={address}, level={self.ble["locate_level"]}')
                                 else:
-                                    # Attempt to write alert level
-                                    try: 
-                                        service.alert_level = self.ble["locate_level"]
-                                    except:
-                                        if self.debug: print(f'WARNING: Locate mode could not write Alert Level address={address}, level={self.ble["locate_level"]}')
-                                    else:
-                                        # Increment count
-                                        self.ble["locate_counts"][address] += 1
-                                        if self.debug: print(f'INFO: Locate mode Alert Level written address={address}, count={self.ble["locate_counts"][address]}, level={self.ble["locate_level"]}')
-                                # Disconnect from device
-                                connection.disconnect()
-                                if self.debug: print(f'INFO: Locate mode disconnect address={address}')
-                                # Wait for disconnection
-                                while connection.connected:
-                                    pass
-
-                    # Cancelling locating ?
-                    elif self.ble["locate_level"] == ALERT_LEVEL_CANCEL:
-
-                        # Turn on LEDs during cancellation attempt
-                        self.hw["led_high"].write(True)
-                        self.hw["led_mild"].write(True)
-
-                        # Still need to make cancel attempts ?
-                        if self.ble["locate_cancel"] > 0:
-                            # Loop through devices we previously located
-                            for address in self.ble["locate_counts"].keys():
-                                # Need to transmit write to this device
-                                if self.ble["locate_counts"][address] > 0:
-                                    # Attempt to connect to device
-                                    connection = self.ble["radio"].connect(address, timeout=0.1)
-                                    if self.debug: print(f'INFO: Locate mode connect address={address}, connected={connection.connected}')
-                                    # Attempt to get service
-                                    try:
-                                        service = connection[ImmediateAlertService]
-                                    except:
-                                        if self.debug: print(f'WARNING: Locate mode could not find Immediate Alert Service address={address}')
-                                    else:
-                                        # Attempt to cancel alert level
-                                        try: 
-                                            service.alert_level = ALERT_LEVEL_NONE
-                                        except:
-                                            if self.debug: print(f'WARNING: Locate mode could not write Alert Level address={address}, level={self.ble["locate_level"]}')
-                                        else:
-                                            if self.debug: print(f'INFO: Locate mode Alert Level written address={address}, count={self.ble["locate_cancel"]}, level=0')
-                                    # Disconnect from device
-                                    connection.disconnect()
-                                    if self.debug: print(f'INFO: Locate mode disconnect address={address}")')
-                                    # Wait for disconnection
-                                    while connection.connected:
-                                        pass
-                            # Decrement cancel counter
-                            self.ble["locate_cancel"] -= 1
-                            
-                        # Exhausted cancellation attempts ?
-                        if self.ble["locate_cancel"] <= 0:
-                            if self.debug: print(f'INFO: Target mode')
-                            # Go to locate level none
-                            self.ble["locate_level"] = ALERT_LEVEL_NONE 
-                            # Clear locate counts
-                            self.ble["locate_counts"] = {}
-                            # Clear cancel attempt count
-                            self.ble["locate_cancel"] = 0
-                            # Stop locate timer
-                            self.ticks["locate"].write(0, False)
+                                    if self.debug: print(f'INFO: Locate mode Alert Level written address={address}, level={self.ble["locate_level"]}')
+                            # Disconnect from device
+                            connection.disconnect()
+                            if self.debug: print(f'INFO: Locate mode disconnect address={address}')
+                            # Wait for disconnection
+                            while connection.connected:
+                                pass
 
                     # Something went wrong ?
                     else:
                         if self.debug: print(f'INFO: Target mode')
                         # Go to locate level none
                         self.ble["locate_level"] = ALERT_LEVEL_NONE 
-                        # Clear locate counts
-                        self.ble["locate_counts"] = {}
-                        # Clear cancel attempt count
-                        self.ble["locate_cancel"] = 0
                         # Stop locate timer
                         self.ticks["locate"].write(0, False)
 
