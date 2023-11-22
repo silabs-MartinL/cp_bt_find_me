@@ -1,3 +1,35 @@
+"""
+*****************************************************************************
+Copyright 2023 Silicon Laboratories Inc. www.silabs.com
+*****************************************************************************
+SPDX-License-Identifier: Zlib
+
+The licensor of this software is Silicon Laboratories Inc.
+
+This software is provided \'as-is\', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+
+*****************************************************************************
+# EXPERIMENTAL QUALITY
+This code has not been formally tested and is provided as-is. It is not
+suitable for production environments. In addition, this code will not be
+maintained and there may be no bug maintenance planned for these resources.
+Silicon Labs may update projects from time to time.
+******************************************************************************
+"""
 # Import core modules
 import board
 
@@ -11,9 +43,9 @@ class Rtttl():
 
     # Initialisation
     def __init__(self, pin, debug):
-        print(f'Rtttl.init({debug})')
         # Initialise
         self.debug = debug
+        if self.debug: print(f'Rtttl.init({debug})')        
         self.pin = pin
         self.tunes = {}
         self.tune_names = []
@@ -25,27 +57,10 @@ class Rtttl():
         self.piezo = Piezo(pin, False)
         # Run initial tick timer
         self.tick = Tick("rtttl", 333, False, False)        
-        # Initialise frequencies
-        # Load a tune
-        #self.notes = []
-        #self.load("friends1:d=8,o=5,b=180:b,16b,16a,16g,f,f,16g,a,4g,b,16b,16a,16g,f,f,16g,a,4g,4,6d,g,a,c6,b,a,g.,16g,d,g,a,2a,16d,g,a,c6,b,a,g.,16c6,b,a,g,2d6,16c6,c6,c6,c6,b,a,g.,16a,b,4b,16g,16a,16b,16c6,c6,c6,c6,c6,b,a,g,g.,16d,16g,16a,b,4a,4g,d,6,c6,4b,16a,g,b.,a")
-        #self.load("missioni:d=4,o=5,b=112:8d#.,8d#.,8d#.,8d#.,8f#,16g#,16f#,8d#.,8d#.,8d#.,8d#,16d#,8c#,8d,8d#.,8d#.,8d#.,8d#.,8f#,16g#,16f#,8d#.,8d#.,8d#.,8d#,16d#,8c#,8d,8d#,16p,8d#,16p,8d#,16p,8d#,16p,16f#,16p,16g#,16p,8d#,16p,8d#,16p,8d#,16p,8d#,16p,16c#,16p,16d,16p,16d#,16p,16c#,16d#,16p,16c#,16d#,16p,16c#,16d#,16p,16f#,16p,16g#,16f#,16d#,16p,16c#,16d#,16p,16c#,16d#,16p,16c#,16d#,16p,8c#,8d,16a#,16g,2d#,32p,16a#,16g,2d,32p,16a#,16g,2c#,16p,16a#,16c")
-        #self.load("dualingbanjos:d=4,o=5,b=200:8c#,8d,e,c#,d,b4,c#,d#4,b4,p,16c#6,16p,16d6,16p,8e6,8p,8c#6,8p,8d6,8p,8b,8p,8c#6,8p,8a,8p,b,p,a4,a4,b4,c#,d#4,c#,b4,p,8a,8p,8a,8p,8b,8p,8c#6,8p,8a,8p,8c#6,8p,8b")
-        #self.load("flinston:d=4,o=5,b=40:32p,16f6,16a#,16a#6,32g6,16f6,16a#.,16f6,32d#6,32d6,32d6,32d#6,32f6,16a#,16c6,d6,16f6,16a#.,16a#6,32g6,16f6,16a#.,32f6,32f6,32d#6,32d6,32d6,32d#6,32f6,16a#,16c6,a#,16a6,16d6.,16a#6,32a6,32a6,32g6,32f#6,32a6,8g6,16g6,16c6.,32a6,32a6,32g6,32g6,32f6,32e6,32g6,8f6,16f6,16a#.,16a#6,32g6,16f6,16a#.,16f6,32d#6,32d6,32d6,32d#6,32f6,16a#,16c6.,32d6,32d#6,32f6,16a#,16c6.,32d6,32d#6,32f6,16a#6,16c7,8a#.6")
-        #self.load("topcat2:d=8,o=5,b=112:f,a#,16p,16f.,a#,16p,f,a#,16p,16f.,a#,16p,16f,16f,16f,16g,16g,16a,a#,a#,2p,16a#,a#,16g,a,16g,f,a#.,a#,2p,16a#,a#,16g,a,16g,f.,d.,d#.,e.,f.,16g.,16g#.,16a.,4a#.,p,c.6,c.6,c.6,c.6,16c.6,16a.,16g.,4f.,p,a#,a#,2p,16a#,a#,16g,a,16g,f.,a#,a#.,4c6,c6,4g.,4p,g,16a,a#.,g,16a,a#.,c6,16c#6,d")
-        #self.load("williamt:d=4,o=5,b=140:16c,16c,16c,16p,16c,16c,16c,16p,16c,16c,16f,16p,8g,16a,16p,16c,16c,16c,16p,16c,16c,16f,16p,16a,16a,16g,16p,8e,16c,16p,16c,16c,16c,16p,16c,16c,16c,16p,16c,16c,16f,16p,8g,16a,16p,16f,16a,c6,16p,16a#,16a,16g,16f,16p,16a,16p,16f,16p")
-        #self.note = 0
-        #self.on = False
-        #self.repeat = False
-        #self.tune = ""
-        #self.write_repeat = False
-        #self.write_tune = ""
-        # Play a tune
-        #self.write(True, "friends1:d=8,o=5,b=90:b,16b,16a,16g,f,f,16g,a,4g,b,16b,16a,16g,f,f,16g,a,4g,4,6d,g,a,c6,b,a,g.,16g,d,g,a,2a,16d,g,a,c6,b,a,g.,16c6,b,a,g,2d6,16c6,c6,c6,c6,b,a,g.,16a,b,4b,16g,16a,16b,16c6,c6,c6,c6,c6,b,a,g,g.,16d,16g,16a,b,4a,4g,d,6,c6,4b,16a,g,b.,a")
-        # Start initial idle timer
-        #self.tick.write(333, False)
 
+    # Main function - call repeatedly to drive playback
     def main(self):
+        # Timer has fired ?
         if self.tick.read():
             played = False
             # Playing ?
@@ -275,9 +290,4 @@ class Rtttl():
         "a#7" : 3729,
         "b7"  : 3951}
 
-
 # Rtttl class (END)
-
-
-
-
