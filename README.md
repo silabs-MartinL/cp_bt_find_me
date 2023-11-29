@@ -22,11 +22,11 @@ Two LEDs and two buttons are used to display status and control the device these
 
 The LEDs and button assignments on each board are shown in the table below (see the Hardware section below for wiring information):
 
-| Board / Name          | LED High       | LED Mild | Button High | Button Mild |
-| --------------------- | -------------- | -------- | ----------- | ----------- |
-| **xG24 Explorer Kit** | LED1           | LED0     | BTN1        | BTN0        |
-| **xG24 Dev Kit**      | RED            | BLUE     | BTN1        | BTN0        |
-| **SparkFun MGM240P**  | External (PB0) | STAT     | External () | External () |
+| Board / Name          | LED High       | LED Mild | Button High    | Button Mild    |
+| --------------------- | -------------- | -------- | -------------- | -------------- |
+| **xG24 Explorer Kit** | LED1           | LED0     | BTN1           | BTN0           |
+| **xG24 Dev Kit**      | RED            | BLUE     | BTN1           | BTN0           |
+| **SparkFun MGM240P**  | External (PB0) | STAT     | External (PB2) | External (PB4) |
 
 ### LED Indications
 
@@ -41,7 +41,7 @@ The LEDs and button assignments on each board are shown in the table below (see 
 
 ### Button Controls
 
-Button functions are activated when the button is released.
+Button functions are activated when the button is pressed.
 
 In the final implementation a device in locator mode will continually scan for new target devices to activate.
 
@@ -67,7 +67,7 @@ The EFR Connect mobile application, available for iOS and Android, can also be u
 
 ## Software
 
-This code was developed using CircuitPython 8.2.8 (2023-11-16) and uses libraries from the 8.x 2023-11-21 library bundle. To program your device copy the files and folders, from one of the folders above, into the root of your CircuitPython device.
+This code was developed using CircuitPython 8.2.8 (2023-11-16) and uses libraries from the 8.x 2023-11-21 library bundle. To program your device copy the files and folders, from one of the folders listed below, into the root of your CircuitPython device.
 
 **device_root_1_hardware:** Contains the software for step 1 which allows the operation of the device hardware to be tested. 
 

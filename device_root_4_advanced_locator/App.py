@@ -133,7 +133,7 @@ class App():
             self.hw["btn_high"].read()
             self.hw["btn_mild"].read()
             # Has a button been released ? 
-            if self.hw["btn_high"].released or self.hw["btn_mild"].released:
+            if self.hw["btn_high"].pressed or self.hw["btn_mild"].pressed:
                 # Running as target ?
                 if self.ble["locate_level"] == ALERT_LEVEL_NONE:
                     # Sounding alert ?
@@ -142,7 +142,7 @@ class App():
                         # Update characteristic
                         self.ble["ias"].alert_level = ALERT_LEVEL_NONE
                     # High button released ?
-                    elif self.hw["btn_high"].released:
+                    elif self.hw["btn_high"].pressed:
                         if self.debug: print(f'INFO: Locate mode high')
                         # Go to locate level high
                         self.ble["locate_level"] = ALERT_LEVEL_HIGH
@@ -151,7 +151,7 @@ class App():
                         # Clear cancel attempt count
                         self.ble["locate_cancel"] = 0                                               
                     # Mild button released ?
-                    elif self.hw["btn_mild"].released:
+                    elif self.hw["btn_mild"].pressed:
                         if self.debug: print(f'INFO: Locate mode mild')
                         # Go to locate level mild
                         self.ble["locate_level"] = ALERT_LEVEL_MILD 

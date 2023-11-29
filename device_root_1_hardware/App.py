@@ -106,7 +106,7 @@ class App():
             self.hw["btn_mild"].read()
             
             # Mild button released ? 
-            if self.hw["btn_mild"].released:
+            if self.hw["btn_mild"].pressed:
                 # Not playing mild tune ? 
                 if self.hw["rtttl"].play_name != self.data["tune_name_mild"]:
                     # Play mild tune
@@ -125,7 +125,7 @@ class App():
                     self.data["led_mask_mild"] = 0b1 
 
             # High button released ? 
-            if self.hw["btn_high"].released:
+            if self.hw["btn_high"].pressed:
                 # Not playing high tune ? 
                 if self.hw["rtttl"].play_name != self.data["tune_name_high"]:
                     # Play high tune

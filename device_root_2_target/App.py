@@ -125,7 +125,7 @@ class App():
             self.hw["btn_high"].read()
             self.hw["btn_mild"].read()
             # Has a button been released ? 
-            if self.hw["btn_high"].released or self.hw["btn_mild"].released:
+            if self.hw["btn_high"].pressed or self.hw["btn_mild"].pressed:
                 # Sounding alert ?
                 if self.ble["ias"].alert_level != ALERT_LEVEL_NONE:
                     if self.debug: print(f'INFO: Target mode alert cancelled locally')
