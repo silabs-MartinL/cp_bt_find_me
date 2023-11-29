@@ -89,27 +89,27 @@ This is simplest board to work with as the passive piezo buzzer can be easily co
 
 The table and image below show the required connections:
 
-| **xg24 Explorer Kit** | External Components           |
+| xg24 Explorer Kit | External Components           |
 | --------------------- | ----------------------------- |
 | mikro BUS: GND        | Passive Piezo: Ground (black) |
 | mikro BUS: PWM (PA0)  | Passive Piezo: Signal (red)   |
 
-**![piezo-exp](images/piezo-exp.png)**
+![piezo-exp](images/piezo-exp-2.png)
 
-### **Silicon Labs xG24 Dev Kit**
+### Silicon Labs xG24 Dev Kit
 
-**This board also has the required buttons and LEDs on board, but the passive piezo buzzer needs to be connected to the expansion header slots at the side of the board. You may find it easier to fit header sockets to the Dev Kit and pins to the passive piezo buzzer.** 
+This board also has the required buttons and LEDs on board, but the passive piezo buzzer needs to be connected to the expansion header slots at the side of the board. You may find it easier to fit header sockets to the Dev Kit and pins to the passive piezo buzzer. 
 
-**This board also has a slot for a coin cell and a connector for an external battery for portable use.** 
+This board also has a slot for a coin cell and a connector for an external battery for portable use. 
 
-**The table and image below show the required connections:**
+The table and image below show the required connections:
 
-| **xg24 Dev Kit**            | **External Components**           |
-| --------------------------- | --------------------------------- |
-| **Expansion: pin 1 (GND)**  | **Passive Piezo: Ground (black)** |
-| **Expansion: pin 10 (PA7)** | **Passive Piezo: Signal (red)**   |
+| xg24 Dev Kit            | External Components           |
+| ----------------------- | ----------------------------- |
+| Expansion: pin 1 (GND)  | Passive Piezo: Ground (black) |
+| Expansion: pin 10 (PA7) | Passive Piezo: Signal (red)   |
 
-**![piezo-dev](images/piezo-dev.png)**
+![piezo-dev](images/piezo-dev-2.png)
 
 ### SparkFun Thing Plus MGM240P
 
@@ -127,5 +127,5 @@ The table below shows the required connections and the wiring diagram shows brea
 | A4           | Button+ (with 1k pull-up resistor)  |
 | B2           | Button+ (with 1k pull-up resistor)  |
 
-**![SparkFun-MGM240P-Expansion_bb](images/expanded-sparkfun.png)**
+![SparkFun-MGM240P-Expansion_bb](images/piezo-sparkfun-2.png)
 
